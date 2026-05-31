@@ -449,16 +449,18 @@ document.addEventListener('lateral:listo', async () => {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({
-              id: editandoId,
-              nombre_completo: nombre,
-              apellidos_completos: apellidos,
-              nombre_usuario: usuario,
-              gmail,
-              rol: Number(rolSeleccionado),
-              activo,
-              firma_url,
-            }),
+            body: JSON.stringify(Object.assign(
+              {
+                id: editandoId,
+                nombre_completo: nombre,
+                apellidos_completos: apellidos,
+                nombre_usuario: usuario,
+                gmail,
+                rol: Number(rolSeleccionado),
+                activo,
+              },
+              firma_url !== null ? { firma_url } : {}
+            )),
           }
         );
 

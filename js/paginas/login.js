@@ -63,13 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const { data: perfil, error: errBusqueda } = await supabase
         .from('perfiles')
-        .select('gmail')
+        .select('gmail, activo')
         .ilike('nombre_usuario', usuario)
         .maybeSingle();
 
       if (errBusqueda || !perfil) {
         setCargandoLogin(false);
         errorUsuario.textContent = 'Usuario no encontrado';
+        return;
+      }
+
+      if (perfil.activo === false) {
+        setCargandoLogin(false);
+        errorUsuario.textContent = 'Cuenta desactivada. Contacte al administrador';
         return;
       }
 
