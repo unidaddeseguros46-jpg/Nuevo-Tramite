@@ -47,9 +47,9 @@
     return blob
   }
 
-  async function generarYSubirWord(datos, idDocumento, supabase) {
+  async function generarYSubirWord(datos, carpetaUsuario, supabase) {
     const blob = await generarWord(datos)
-    const nombre = `emitidos/${idDocumento}/${datos.numero_documento}.docx`
+    const nombre = `emitidos/${carpetaUsuario}/${datos.numero_documento}.docx`
 
     const { error } = await supabase.storage
       .from('documentos')

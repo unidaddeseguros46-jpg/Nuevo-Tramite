@@ -4,6 +4,7 @@
   let supabase
   let sesion = null
   let perfilActual = null
+  let nombreCarpeta = ''
   let areas = []
   let adjuntosSeleccionados = []
   let datePicker = null
@@ -33,7 +34,7 @@
 
     const { data: perfil, error: errorPerfil } = await supabase
       .from('perfiles')
-      .select('id, nombre_completo, apellidos_completos, gmail, rol')
+      .select('id, nombre_completo, apellidos_completos, nombre_usuario, gmail, rol')
       .eq('id', session.user.id)
       .single()
 
@@ -42,15 +43,12 @@
       return
     }
     perfilActual = perfil
+    nombreCarpeta = perfil.nombre_usuario
 
     await Promise.all([
       cargarAreas(),
       precargarNumeros(),
     ])
-
-    const nombreCompleto = `${perfil.nombre_completo || ''} ${perfil.apellidos_completos || ''}`.trim()
-    document.getElementById('campoAutor').value = nombreCompleto
-    document.getElementById('campoRemitente').value = nombreCompleto
 
     inicializarDatePicker()
     inicializarDesplegableTipoDoc()
@@ -58,6 +56,10 @@
     inicializarDesplegablePrioridad()
     inicializarFileInput()
     inicializarBotones()
+
+    const nombreCompleto = `${perfil.nombre_completo || ''} ${perfil.apellidos_completos || ''}`.trim()
+    document.getElementById('campoAutor').value = nombreCompleto
+    document.getElementById('campoRemitente').value = nombreCompleto
   }
 
   async function cargarAreas() {
@@ -148,8 +150,6 @@
 
     if (cacheNumeros[tipoDocumento]) {
       campo.value = cacheNumeros[tipoDocumento]
-    } else {
-      campo.value = 'Generando...'
     }
 
     try {
@@ -174,9 +174,7 @@
       campo.value = data.numero_documento
       cacheNumeros[tipoDocumento] = data.numero_documento
     } catch (err) {
-      if (!cacheNumeros[tipoDocumento]) {
-        campo.value = 'Error al generar'
-      }
+      // Silencio — si hay error y hay caché, se mantiene el valor anterior
     }
   }
 
@@ -433,10 +431,10 @@
         throw new Error(data.error || 'Error al guardar el trámite')
       }
 
-      // ─── 3. Mover archivos de temp/ a emitidos/{idDocumento}/ ───
+      // ─── 3. Mover archivos de temp/ a emitidos/{nombre_usuario}/{numero_doc}/ ───
       for (const archivo of archivosSubidos) {
         const nombre = archivo.ruta.split('/').pop()
-        const destinoRuta = `emitidos/${data.id}/${nombre}`
+        const destinoRuta = `emitidos/${nombreCarpeta}/${data.numero_documento}/${nombre}`
 
         const { error: copyError } = await supabase.storage
           .from('documentos')
@@ -481,7 +479,7 @@
           cargo,
           asunto,
           cuerpo,
-        }, data.id, supabase)
+        }, nombreCarpeta, supabase)
 
         await supabase.from('documentos_archivos').insert({
           documento_id: data.id,
@@ -497,6 +495,7 @@
       }
 
       // ─── Éxito ───
+      delete cacheNumeros[tipoDocumento]
       texto.textContent = '¡Guardado!'
       spinner.style.display = 'none'
       document.getElementById('campoNumero').value = data.numero_documento || ''
